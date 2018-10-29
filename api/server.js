@@ -56,8 +56,6 @@ server.get('/api/notes/:id', (req, res) => {
 // Add new note
 
 server.post('/api/notes', (req, res) => {
-    console.log(req.body);
-
     const newNote = {
         'title': req.body.title,
         'content': req.body.content,
@@ -66,15 +64,40 @@ server.post('/api/notes', (req, res) => {
     }
 
     if(newNote.title.length < 1 || newNote.content.length < 1 || !newNote.user_id){
-        return res.status(400).json({error: `New notes must have a title, content, and user ID.`})
+        return res.status(400).json({error: `New notes must have a title, content, and user ID.`});
     }
 
     notesDb.insert(newNote).then(reply => {
-        return res.status(201).json({message: `New note successfully added with ID ${reply.id}.`})
+        return res.status(201).json({message: `New note successfully added with ID ${reply.id}.`});
     })
     .catch(err => {
         console.log(err);
-        return res.status(500).json({error: `An error occured when adding the new note.`})
+        return res.status(500).json({error: `An error occured when adding the new note.`});
+    })
+})
+
+// Update existing note
+server.put('/api/notes/:id', (req, res) => {
+    const id = req.params.id;
+
+    const changes = {
+        'title': req.body.title,
+        'content': req.body.content,
+        'tags': req.body.tags
+    }
+
+    notesDb.update(id, changes).then(note => {
+        if(!note){
+            return res.status(404).json({error: `Project with ID ${id} does not exist.`});
+        } else if (!changes.title || !changes.content){
+            return res.status(400).json({error: `Please include a title and content.`});
+        } else {
+            return res.status(200).json({message: `Note ${id} successfully updated.`});
+        }
+    })
+    .catch(err => {
+        console.log(err);
+        return res.status(500).json({error: `Error updating note ID ${id}`});
     })
 })
 
