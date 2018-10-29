@@ -26,6 +26,8 @@ server.use(morgan());
 // .update(id, newNote)
 // .remove(id)
 
+/*** BEGIN NOTES API ***/
+
 // Get all notes
 server.get('/api/notes', (req, res) => {
     notesDb.find().then(notes => {
@@ -100,6 +102,24 @@ server.put('/api/notes/:id', (req, res) => {
         return res.status(500).json({error: `Error updating note ID ${id}`});
     })
 })
+
+
+// delete existing note
+server.delete('/api/notes/:id', (req, res) => {
+    const id = req.params.id;
+
+    notesDb.remove(id).then(reply => {
+        console.log(reply);
+        return res.status(200).json({message: `Note ${id} successfully deleted.`});
+    })
+    .catch(err => {
+        console.log(err);
+        return res.status(500).json({error: `An error occured deleting note ID ${id}.`});
+    })
+})
+
+/*** END NOTES API ***/
+
 
 server.get('/', (req, res) => {
     res.send('Server is running.');
