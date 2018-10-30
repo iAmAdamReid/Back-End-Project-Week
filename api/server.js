@@ -49,7 +49,7 @@ async function register(req, res) {
         try {
             const newUser = await db('users').where({id: newUserId[0]}).first();
             const token = generateToken(newUser);
-            return res.status(201).json({token}, newUserId);
+            return res.status(201).json({username: newUser.username, user_id: newUser.id, token});
         } catch(err){
             console.log(err);
             return res.status(404).json({error: `An error occurred logging in the new user.`})
@@ -168,12 +168,17 @@ server.put('/api/notes/:id', protected, (req, res) => {
     const changes = {
         'title': req.body.title,
         'content': req.body.content,
-        'tags': req.body.tags
+        'tags': req.body.tags,
+        'user_id': req.body.user_id
     }
 
     // prevent empty tags by defaulting to uncategorized
     if(changes.tags === '' || !changes.tags){
         changes.tags = 'Uncategorized'
+    }
+
+    if(!changes.user_id){
+        return res.status(400).status({error: `Note must have a user ID.`})
     }
 
     notesDb.update(id, changes).then(note => {
