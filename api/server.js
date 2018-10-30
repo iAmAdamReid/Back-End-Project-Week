@@ -69,6 +69,11 @@ server.post('/api/notes', (req, res) => {
         return res.status(400).json({error: `New notes must have a title, content, and user ID.`});
     }
 
+    // prevent empty tags by defaulting to uncategorized
+    if(newNote.tags === ''){
+        newNote.tags = 'Uncategorized'
+    }
+
     notesDb.insert(newNote).then(reply => {
         return res.status(201).json({message: `New note successfully added with ID ${reply.id}.`});
     })
@@ -86,6 +91,12 @@ server.put('/api/notes/:id', (req, res) => {
         'title': req.body.title,
         'content': req.body.content,
         'tags': req.body.tags
+    }
+
+
+    // prevent empty tags by defaulting to uncategorized
+    if(changes.tags === ''){
+        changes.tags = 'Uncategorized'
     }
 
     notesDb.update(id, changes).then(note => {
