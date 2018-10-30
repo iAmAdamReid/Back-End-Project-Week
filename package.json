@@ -1,0 +1,38 @@
+{
+  "name": "back-end-project-week",
+  "version": "1.0.0",
+  "description": "Lambda Notes",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --watch --verbose",
+    "start": "nodemon index.js"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iAmAdamReid/Back-End-Project-Week.git"
+  },
+  "author": "Adam Reid",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/iAmAdamReid/Back-End-Project-Week/issues"
+  },
+  "homepage": "https://github.com/iAmAdamReid/Back-End-Project-Week#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.4",
+    "express": "^4.16.4",
+    "helmet": "^3.14.0",
+    "jest": "^23.6.0",
+    "jsonwebtoken": "^8.3.0",
+    "knex": "^0.15.2",
+    "morgan": "^1.9.1",
+    "sqlite3": "^4.0.3",
+    "supertest": "^3.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.5"
+  }
+}
