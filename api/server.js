@@ -4,6 +4,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const {authenticate} = require('../config/middlewares.js');
+const jwtKey = require('../_secrets/keys.js').jwtKey;
 
 // import db helpers
 const notesDb = require('../data/noteHelpers.js');
@@ -19,6 +21,81 @@ server.use(cors());
 server.use(helmet());
 server.use(morgan());
 
+/** Generate Token Function **/
+function generateToken(user) {
+    const jwtPayload = {
+        ...user,
+    };
+    const jwtOptions = {
+        expiresIn: '1h',
+    }
+    return jwt.sign(jwtPayload, jwtKey, jwtOptions);
+}
+
+// REGISTER NEW USERS
+async function register(req, res) {
+    try {
+        const creds = req.body;
+        if(!creds || !creds.password || !creds.username){
+            res.status(400).json({error: "User must have a name and password."});
+        }
+
+        // hash the password input
+        const hash = bcrypt.hashSync(creds.password, 14);
+        creds.password = hash;
+
+        // await the return of new user ID
+        const newUserId = await db('users').insert(creds);
+        try {
+            const newUser = await db('users').where({id: newUserId[0]}).first();
+            const token = generateToken(newUser);
+            return res.status(201).json({token});
+        } catch(err){
+            console.log(err);
+            return res.status(404).json({error: `An error occurred logging in the new user.`})
+        }
+    } catch(err){
+        console.log(err);
+        return res.status(500).json({error: `An error occurred creating a new user.`})
+    }
+}
+
+// LOGIN EXISTING USERS
+async function login(req, res) {
+    try{
+        const creds = req.body;
+        const user = await usersDb.where({username: creds.username}).first();
+        if(user && bcrypt.compareSync(creds.password, user.password)){
+            const token = generateToken(user);
+            res.status(200).json({welcome: user.username, token});
+        } else {
+            res.status(401).json({error: `Invalid user credentials.`})
+        }
+    } catch(err){
+        console.log(err);
+        return res.status(500).json({error: `An error occurred during login.`})
+    }
+}
+
+// Protect content middleware
+
+function protected(req, res, next) {
+    const token = req.headers.authorization;
+    if(token){
+        jwt.verify(token, jwtKey, (err, decodedToken) => {
+            if(err){
+                res.status(401).json({error: `Invalid Token`})
+            } else {
+                req.decodedToken = decodedToken;
+                next();
+            }
+        })
+    } else {
+        res.status(401).json({error: `No token provided.`})
+    }
+}
+
+
 /*** DB SEARCH FUNCTIONS REFERENCE: ***/
 // .find()
 // .find(id)
@@ -29,7 +106,7 @@ server.use(morgan());
 /*** BEGIN NOTES API ***/
 
 // Get all notes
-server.get('/api/notes', (req, res) => {
+server.get('/api/notes', protected, (req, res) => {
     notesDb.find().then(notes => {
         return res.status(200).json(notes);
     })
@@ -40,7 +117,7 @@ server.get('/api/notes', (req, res) => {
 })
 
 // Get note by ID
-server.get('/api/notes/:id', (req, res) => {
+server.get('/api/notes/:id', protected, (req, res) => {
     const id = req.params.id;
     notesDb.findById(id).then(note => {
         if(!note){
@@ -57,7 +134,7 @@ server.get('/api/notes/:id', (req, res) => {
 
 // Add new note
 
-server.post('/api/notes', (req, res) => {
+server.post('/api/notes', protected, (req, res) => {
     const newNote = {
         'title': req.body.title,
         'content': req.body.content,
@@ -70,7 +147,7 @@ server.post('/api/notes', (req, res) => {
     }
 
     // prevent empty tags by defaulting to uncategorized
-    if(newNote.tags === ''){
+    if(newNote.tags === '' || !newNote.tags){
         newNote.tags = 'Uncategorized'
     }
 
@@ -84,7 +161,7 @@ server.post('/api/notes', (req, res) => {
 })
 
 // Update existing note
-server.put('/api/notes/:id', (req, res) => {
+server.put('/api/notes/:id', protected, (req, res) => {
     const id = req.params.id;
 
     const changes = {
@@ -93,9 +170,8 @@ server.put('/api/notes/:id', (req, res) => {
         'tags': req.body.tags
     }
 
-
     // prevent empty tags by defaulting to uncategorized
-    if(changes.tags === ''){
+    if(changes.tags === '' || !changes.tags){
         changes.tags = 'Uncategorized'
     }
 
@@ -116,7 +192,7 @@ server.put('/api/notes/:id', (req, res) => {
 
 
 // delete existing note
-server.delete('/api/notes/:id', (req, res) => {
+server.delete('/api/notes/:id', protected, (req, res) => {
     const id = req.params.id;
 
     notesDb.remove(id).then(reply => {
@@ -130,6 +206,17 @@ server.delete('/api/notes/:id', (req, res) => {
 })
 
 /*** END NOTES API ***/
+
+server.post('/api/users/register', async (req, res) => {
+    console.log('register')
+    register(req, res);
+})
+
+server.post('/api/users/login', async (req, res) => {
+    login(req, res);
+})
+
+/*** BEGIN USERS API  ***/
 
 
 server.get('/', (req, res) => {
