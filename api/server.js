@@ -49,7 +49,7 @@ async function register(req, res) {
         try {
             const newUser = await db('users').where({id: newUserId[0]}).first();
             const token = generateToken(newUser);
-            return res.status(201).json({token});
+            return res.status(201).json({token}, newUserId);
         } catch(err){
             console.log(err);
             return res.status(404).json({error: `An error occurred logging in the new user.`})
@@ -64,10 +64,10 @@ async function register(req, res) {
 async function login(req, res) {
     try{
         const creds = req.body;
-        const user = await usersDb.where({username: creds.username}).first();
+        const user = await db('users').where({username: creds.username}).first();
         if(user && bcrypt.compareSync(creds.password, user.password)){
             const token = generateToken(user);
-            res.status(200).json({welcome: user.username, token});
+            res.status(200).json({username: user.username, user_id: user.id, token});
         } else {
             res.status(401).json({error: `Invalid user credentials.`})
         }
@@ -135,6 +135,7 @@ server.get('/api/notes/:id', protected, (req, res) => {
 // Add new note
 
 server.post('/api/notes', protected, (req, res) => {
+
     const newNote = {
         'title': req.body.title,
         'content': req.body.content,
@@ -208,7 +209,6 @@ server.delete('/api/notes/:id', protected, (req, res) => {
 /*** END NOTES API ***/
 
 server.post('/api/users/register', async (req, res) => {
-    console.log('register')
     register(req, res);
 })
 
