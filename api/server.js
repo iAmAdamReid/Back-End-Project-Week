@@ -21,6 +21,14 @@ server.use(cors());
 server.use(helmet());
 server.use(morgan());
 
+
+router = express.Router();
+middleware = require('../config/middlewares.js');
+router.use('/api/notes/', middleware.authenticate);
+server.use(router);
+
+
+
 /** Generate Token Function **/
 function generateToken(user) {
     const jwtPayload = {
@@ -77,23 +85,12 @@ async function login(req, res) {
     }
 }
 
-// Protect content middleware
 
-function protected(req, res, next) {
-    const token = req.headers.authorization;
-    if(token){
-        jwt.verify(token, jwtKey, (err, decodedToken) => {
-            if(err){
-                res.status(401).json({error: `Invalid Token`})
-            } else {
-                req.decodedToken = decodedToken;
-                next();
-            }
-        })
-    } else {
-        res.status(401).json({error: `No token provided.`})
-    }
-}
+// pass jwt through auth middleware, returning 200(OK) if it passes
+server.get('/api/authorize', middleware.authenticate, (req, res) => {
+    res.status(200).json({message: `Authorized`})
+});
+
 
 
 /*** DB SEARCH FUNCTIONS REFERENCE: ***/
@@ -106,7 +103,7 @@ function protected(req, res, next) {
 /*** BEGIN NOTES API ***/
 
 // Get all notes
-server.get('/api/notes', protected, (req, res) => {
+server.get('/api/notes', (req, res) => {
     notesDb.find().then(notes => {
         return res.status(200).json(notes);
     })
@@ -117,7 +114,7 @@ server.get('/api/notes', protected, (req, res) => {
 })
 
 // Get note by ID
-server.get('/api/notes/:id', protected, (req, res) => {
+server.get('/api/notes/:id', (req, res) => {
     const id = req.params.id;
     notesDb.findById(id).then(note => {
         if(!note){
@@ -134,7 +131,7 @@ server.get('/api/notes/:id', protected, (req, res) => {
 
 // Add new note
 
-server.post('/api/notes', protected, (req, res) => {
+server.post('/api/notes', (req, res) => {
 
     const newNote = {
         'title': req.body.title,
@@ -162,7 +159,7 @@ server.post('/api/notes', protected, (req, res) => {
 })
 
 // Update existing note
-server.put('/api/notes/:id', protected, (req, res) => {
+server.put('/api/notes/:id', (req, res) => {
     const id = req.params.id;
 
     const changes = {
@@ -198,7 +195,7 @@ server.put('/api/notes/:id', protected, (req, res) => {
 
 
 // delete existing note
-server.delete('/api/notes/:id', protected, (req, res) => {
+server.delete('/api/notes/:id', (req, res) => {
     const id = req.params.id;
 
     notesDb.remove(id).then(reply => {
