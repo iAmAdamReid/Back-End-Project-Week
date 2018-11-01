@@ -306,7 +306,6 @@ server.put('/api/users/:id', middleware.authenticate, (req, res) => {
 
     // if decoded ID matches param ID, or if user type is admin, allow changes
     if(parseInt(user_id) === parseInt(id) || req.decodedToken.privileges === 'admin'){
-        console.log('match');
         usersDb.update(id, changes).then(reply => {
             if(!reply){
                 return res.status(404).json({error: `User not found.`})
