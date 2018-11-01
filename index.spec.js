@@ -32,7 +32,6 @@ describe('SERVER', () => {
             it('should return a list of notes if logged in', async(done) => {
 
                 request(server).post('/api/users/login').send({username: 'testUser', password: 'password'}).end(function(err, res){
-                    // console.log(res.body.user_id);
                     token = res.body.token;
 
                     request(server).get('/api/notes').set('Authorization', token).expect(200).end(function(err, res){
@@ -167,18 +166,36 @@ describe('SERVER', () => {
         describe('LOGGED OUT (Unauthorized) USERS API', () => {
 
             it('should prevent unauthorized user GET requests', async(done) => {
-                request(server).get('/api/users')
-                done();
+                request(server).get('/api/users').end(function(err, res){
+                    expect(res.status).toBe(401);
+                    if(err) return done(err);
+                    done();
+                })
+            })
+
+            it('should prevent unauthotized user GET BY ID requests', async(done) => {
+                request(server).get('/api/users/1').end(function(err, res){
+                    expect(res.status).toBe(401);
+                    if(err) return done(err);
+                    done();
+                })
             })
     
             it('should prevent unauthorized user edits', async(done) => {
-                done();
+                request(server).put('/api/users/1').send({username: 'trollName', password: 'trollPassword'}).end(function(err, res){
+                    expect(res.status).toBe(401);
+                    if(err) return done(err);
+                    done();
+                })
             })
     
             it('should prevent unauthorized user deletion', async(done) => {
-                done();
+                request(server).delete('/api/users/1').end(function(err, res){
+                    expect(res.status).toBe(401);
+                    if(err) return done(err);
+                    done();
+                })
             })
-    
         })
     })
 })
