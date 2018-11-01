@@ -295,14 +295,13 @@ server.put('/api/users/:id', middleware.authenticate, (req, res) => {
     const id = req.params.id;
     const user_id = req.decodedToken.id;
 
-    const changes = {
-        username: req.body.username,
-        password: req.body.password
-    }
+    const changes = req.body;
 
     // hash the password input
+    if(req.body.password){
     const hash = bcrypt.hashSync(changes.password, 14);
     changes.password = hash;
+    }
 
     // if decoded ID matches param ID, or if user type is admin, allow changes
     if(parseInt(user_id) === parseInt(id) || req.decodedToken.privileges === 'admin'){
@@ -310,7 +309,7 @@ server.put('/api/users/:id', middleware.authenticate, (req, res) => {
             if(!reply){
                 return res.status(404).json({error: `User not found.`})
             }
-            return res.status(200).json({message: `User ${id} updated.`})
+            return res.status(200).json({message: `User ${id} updated.`, reply})
         })
         .catch(err => {
             console.log(err);
