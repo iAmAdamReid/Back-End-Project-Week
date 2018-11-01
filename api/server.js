@@ -157,7 +157,7 @@ server.post('/api/notes', (req, res) => {
     }
 
     notesDb.insert(newNote).then(reply => {
-        return res.status(201).json({message: `New note successfully added with ID ${reply.id}.`});
+        return res.status(201).json({message: `New note successfully added with ID ${reply.id}.`, id: reply.id});
     })
     .catch(err => {
         console.log(err);
