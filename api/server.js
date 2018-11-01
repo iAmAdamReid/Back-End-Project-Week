@@ -5,7 +5,7 @@ const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const {authenticate} = require('../config/middlewares.js');
-const jwtKey = require('../_secrets/keys.js').jwtKey;
+const jwtKey = require('../_secrets/keys').jwtKey;
 
 // import db helpers
 const notesDb = require('../data/noteHelpers.js');
